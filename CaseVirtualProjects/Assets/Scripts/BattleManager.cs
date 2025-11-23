@@ -19,8 +19,13 @@ public class BattleManager : MonoBehaviour
     public int maxAttackersPerTarget = 6;
     public float crowdRangeMultiplier = 1.2f;
 
+    // Melee listeleri
     private readonly List<MeleeUnit> cubes = new List<MeleeUnit>(128);
     private readonly List<MeleeUnit> spheres = new List<MeleeUnit>(128);
+
+    // Archer listeleri
+    private readonly List<ArcherUnit> cubeArchers = new List<ArcherUnit>(128);
+    private readonly List<ArcherUnit> sphereArchers = new List<ArcherUnit>(128);
 
     private void Awake()
     {
@@ -59,51 +64,147 @@ public class BattleManager : MonoBehaviour
             spheres.Remove(unit);
     }
 
+    public void RegisterArcher(ArcherUnit archer)
+    {
+        if (archer == null) return;
+
+        if (archer.team == Team.Cube)
+        {
+            if (!cubeArchers.Contains(archer))
+                cubeArchers.Add(archer);
+        }
+        else
+        {
+            if (!sphereArchers.Contains(archer))
+                sphereArchers.Add(archer);
+        }
+    }
+
+    public void UnregisterArcher(ArcherUnit archer)
+    {
+        if (archer == null) return;
+
+        if (archer.team == Team.Cube)
+            cubeArchers.Remove(archer);
+        else
+            sphereArchers.Remove(archer);
+    }
+
     public void UpdateUnit(MeleeUnit unit)
     {
         if (unit == null || !unit.IsAlive)
             return;
 
-        List<MeleeUnit> enemies = unit.team == Team.Cube ? spheres : cubes;
-        if (enemies.Count == 0)
-        {
-            unit.StopMoving();
-            return;
-        }
-
-        MeleeUnit closest = null;
-        float closestDist = float.MaxValue;
         Vector3 myPos = unit.transform.position;
 
-        for (int i = 0; i < enemies.Count; i++)
+        // 1) Melee düşmanlar
+        List<MeleeUnit> enemyMelee = unit.team == Team.Cube ? spheres : cubes;
+        MeleeUnit closestMelee = null;
+        float closestMeleeDist = float.MaxValue;
+
+        for (int i = 0; i < enemyMelee.Count; i++)
         {
-            MeleeUnit enemy = enemies[i];
+            MeleeUnit enemy = enemyMelee[i];
             if (enemy == null || !enemy.IsAlive)
                 continue;
 
-            float dist = Vector3.SqrMagnitude(enemy.transform.position - myPos);
-            if (dist < closestDist)
+            float dist = (enemy.transform.position - myPos).sqrMagnitude;
+            if (dist < closestMeleeDist)
             {
-                closestDist = dist;
-                closest = enemy;
+                closestMeleeDist = dist;
+                closestMelee = enemy;
             }
         }
 
-        if (closest == null)
+        List<ArcherUnit> enemyArchers = unit.team == Team.Cube ? sphereArchers : cubeArchers;
+        ArcherUnit closestArcher = null;
+        float closestArcherDist = float.MaxValue;
+
+        for (int i = 0; i < enemyArchers.Count; i++)
+        {
+            ArcherUnit enemy = enemyArchers[i];
+            if (enemy == null || !enemy.IsAlive)
+                continue;
+
+            float dist = (enemy.transform.position - myPos).sqrMagnitude;
+            if (dist < closestArcherDist)
+            {
+                closestArcherDist = dist;
+                closestArcher = enemy;
+            }
+        }
+
+        CommanderUnit closestCommander = null;
+        float closestCommanderDist = float.MaxValue;
+
+        foreach (var cmd in CommanderUnit.All)
+        {
+            if (cmd == null || !cmd.IsAlive)
+                continue;
+
+            if (cmd.team == unit.team)
+                continue;
+
+            float dist = (cmd.transform.position - myPos).sqrMagnitude;
+            if (dist < closestCommanderDist)
+            {
+                closestCommanderDist = dist;
+                closestCommander = cmd;
+            }
+        }
+
+        if (closestMelee == null && closestArcher == null && closestCommander == null)
         {
             unit.StopMoving();
             return;
         }
 
-        Vector3 targetPos = closest.transform.position;
+        Transform finalTarget = null;
+        bool finalIsMelee = false;
+        float bestDist = float.MaxValue;
+
+        if (closestMelee != null)
+        {
+            bestDist = closestMeleeDist;
+            finalTarget = closestMelee.transform;
+            finalIsMelee = true;
+        }
+
+        if (closestArcher != null && closestArcherDist < bestDist)
+        {
+            bestDist = closestArcherDist;
+            finalTarget = closestArcher.transform;
+            finalIsMelee = false;
+        }
+
+        if (closestCommander != null && closestCommanderDist < bestDist)
+        {
+            bestDist = closestCommanderDist;
+            finalTarget = closestCommander.transform;
+            finalIsMelee = false;
+        }
+
+        if (finalTarget == null)
+        {
+            unit.StopMoving();
+            return;
+        }
+
+        Vector3 targetPos = finalTarget.position;
 
         if (unit.IsInAttackRange(targetPos))
         {
-            unit.Attack(closest);
+            unit.Attack(finalTarget);
         }
         else
         {
-            bool crowded = IsTargetCrowded(unit, closest);
+            bool crowded = false;
+
+            if (finalIsMelee && closestMelee != null)
+            {
+                crowded = IsTargetCrowded(unit, closestMelee);
+            }
+
             if (!crowded)
             {
                 unit.MoveTowards(targetPos);
@@ -117,6 +218,8 @@ public class BattleManager : MonoBehaviour
 
     private bool IsTargetCrowded(MeleeUnit requester, MeleeUnit target)
     {
+        if (target == null) return false;
+
         List<MeleeUnit> sameTeam = requester.team == Team.Cube ? cubes : spheres;
 
         int count = 0;
@@ -130,7 +233,7 @@ public class BattleManager : MonoBehaviour
             if (ally == null || !ally.IsAlive)
                 continue;
 
-            float sqrDist = Vector3.SqrMagnitude(ally.transform.position - targetPos);
+            float sqrDist = (ally.transform.position - targetPos).sqrMagnitude;
             if (sqrDist <= allowedRangeSqr)
             {
                 count++;
@@ -200,4 +303,27 @@ public class BattleManager : MonoBehaviour
         return separation;
     }
 
+    public Transform FindClosestEnemyTarget(Team team, Vector3 fromPos)
+    {
+        List<MeleeUnit> enemies = team == Team.Cube ? spheres : cubes;
+
+        MeleeUnit closest = null;
+        float closestSqr = float.MaxValue;
+
+        for (int i = 0; i < enemies.Count; i++)
+        {
+            MeleeUnit e = enemies[i];
+            if (e == null || !e.IsAlive)
+                continue;
+
+            float sqr = (e.transform.position - fromPos).sqrMagnitude;
+            if (sqr < closestSqr)
+            {
+                closestSqr = sqr;
+                closest = e;
+            }
+        }
+
+        return closest != null ? closest.transform : null;
+    }
 }

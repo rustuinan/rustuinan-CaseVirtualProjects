@@ -10,23 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: caecd56f6713de848a4d2723f2645740, type: 3}
-  m_Name: MeleeCube
+  m_Name: SphereCommander
   m_EditorClassIdentifier: 
-  id: melee_cube_01
-  displayName: MeleeCube
-  soldierType: 0
-  maxHealth: 100
-  attackDamage: 10
-  attackRange: 1.5
-  attackSpeed: 1
-  moveSpeed: 3.5
+  id: commander_cube_01
+  displayName: CommanderCube
+  soldierType: 3
+  maxHealth: 500
+  attackDamage: 25
+  attackRange: 1.8
+  attackSpeed: 1.1
+  moveSpeed: 4.2
   unitPrefab: {fileID: 8940422777442241550, guid: efea020f31d188943b6d944fe4969dab, type: 3}
   projectilePrefab: {fileID: 0}
+  canFallbackMelee: 1
+  fallbackMeleeDamage: 5
+  fallbackMeleeRange: 1.2
   canHeal: 0
   healAmount: 10
   healCooldown: 5
   areaRadius: 2
   isCommander: 0
+  slamDamage: 180
+  slamRadius: 7
+  slamCooldown: 5
+  chargeDamage: 30
+  chargeDistance: 8
+  chargeSpeed: 10
+  chargeRadius: 5
+  chargeCooldown: 5
+  chargeKnockbackDistance: 4
   cost: 1
   damageRandomPercent: 0.1
   attackSpeedRandomPercent: 0.05

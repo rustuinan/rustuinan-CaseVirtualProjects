@@ -60,7 +60,6 @@ public class MeleeUnit : MonoBehaviour
         }
     }
 
-
     public void MoveTowards(Vector3 targetPos)
     {
         isMoving = true;
@@ -80,11 +79,8 @@ public class MeleeUnit : MonoBehaviour
         else
         {
             Vector3 radialDir = toTarget.normalized;
-
             Vector3 tangentDir = new Vector3(-radialDir.z, 0f, radialDir.x);
-
             float side = surroundBias >= 0f ? 1f : -1f;
-
             Vector3 orbitDir = (radialDir + tangentDir * side * 0.7f).normalized;
             dir = orbitDir;
         }
@@ -119,38 +115,61 @@ public class MeleeUnit : MonoBehaviour
         return dist <= config.attackRange;
     }
 
-    public void Attack(MeleeUnit target)
+    public void Attack(Transform target)
     {
+        if (target == null)
+            return;
+
         StopMoving();
 
         attackTimer -= Time.deltaTime;
 
-        if (attackTimer <= 0f)
+        if (attackTimer > 0f)
+            return;
+
+        PlayAttackAnimation();
+
+        float baseInterval = 1f / Mathf.Max(0.01f, config.attackSpeed);
+
+        float speedFactor = 1f;
+        if (config.attackSpeedRandomPercent > 0f)
         {
-            PlayAttackAnimation();
+            float min = 1f - config.attackSpeedRandomPercent;
+            float max = 1f + config.attackSpeedRandomPercent;
+            speedFactor = Random.Range(min, max);
+        }
 
-            float baseInterval = 1f / Mathf.Max(0.01f, config.attackSpeed);
+        attackTimer = baseInterval * speedFactor;
 
-            float speedFactor = 1f;
-            if (config.attackSpeedRandomPercent > 0f)
-            {
-                float min = 1f - config.attackSpeedRandomPercent;
-                float max = 1f + config.attackSpeedRandomPercent;
-                speedFactor = Random.Range(min, max);
-            }
+        float randomFactor = 1f;
+        if (config.damageRandomPercent > 0f)
+        {
+            float min = 1f - config.damageRandomPercent;
+            float max = 1f + config.damageRandomPercent;
+            randomFactor = Random.Range(min, max);
+        }
 
-            attackTimer = baseInterval * speedFactor;
+        float finalDamage = config.attackDamage * randomFactor;
 
-            float randomFactor = 1f;
-            if (config.damageRandomPercent > 0f)
-            {
-                float min = 1f - config.damageRandomPercent;
-                float max = 1f + config.damageRandomPercent;
-                randomFactor = Random.Range(min, max);
-            }
+        MeleeUnit melee = target.GetComponentInParent<MeleeUnit>();
+        if (melee != null && melee.IsAlive && melee.team != team)
+        {
+            melee.TakeDamage(finalDamage);
+            return;
+        }
 
-            float finalDamage = config.attackDamage * randomFactor;
-            target.TakeDamage(finalDamage);
+        ArcherUnit archer = target.GetComponentInParent<ArcherUnit>();
+        if (archer != null && archer.IsAlive && archer.team != team)
+        {
+            archer.TakeDamage(finalDamage);
+            return;
+        }
+
+        CommanderUnit commander = target.GetComponentInParent<CommanderUnit>();
+        if (commander != null && commander.IsAlive && commander.team != team)
+        {
+            commander.TakeDamage(finalDamage);
+            return;
         }
     }
 

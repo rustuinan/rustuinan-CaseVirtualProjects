@@ -10,18 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: caecd56f6713de848a4d2723f2645740, type: 3}
-  m_Name: MeleeCube
+  m_Name: SphereArcher
   m_EditorClassIdentifier: 
-  id: melee_cube_01
-  displayName: MeleeCube
-  soldierType: 0
+  id: archer_sphere_01
+  displayName: Archer Sphere
+  soldierType: 1
   maxHealth: 100
   attackDamage: 10
-  attackRange: 1.5
-  attackSpeed: 1
-  moveSpeed: 3.5
+  attackRange: 10
+  attackSpeed: 1.2
+  moveSpeed: 4
   unitPrefab: {fileID: 8940422777442241550, guid: efea020f31d188943b6d944fe4969dab, type: 3}
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 4845259301342405467, guid: 91976f0b53be81d418f51d8f3a5d098a, type: 3}
   canHeal: 0
   healAmount: 10
   healCooldown: 5

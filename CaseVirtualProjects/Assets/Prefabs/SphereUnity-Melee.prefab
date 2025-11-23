@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5178047782314333392}
   - component: {fileID: 5599298828589300879}
   - component: {fileID: 7084301906170534210}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SphereUnity-Melee
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -84,7 +84,7 @@ GameObject:
   - component: {fileID: 8156729280578085309}
   - component: {fileID: 6620318343340110662}
   - component: {fileID: 8587578378936143320}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8804665476397089367}
   - component: {fileID: 766988549431162383}
   - component: {fileID: 6543679977492773553}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 4495054765081328861}
   - component: {fileID: 1617742474091298088}
   - component: {fileID: 3581763902338635317}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube-Commander
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -152,14 +152,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: ff24d8aafdc84884b97bdfaf137040fd, type: 2}
   team: 0
-  modelTransform: {fileID: 8804665476397089367}
-  hopHeight: 0.25
-  hopDuration: 0.25
-  rollSpeed: 360
+  model: {fileID: 0}
   unitLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  searchRadius: 40
+  detectionRadius: 40
   separationRadius: 1.5
   separationStrength: 0.7
-  targetSearchInterval: 0.2
+  sphereStopOffset: 1.5

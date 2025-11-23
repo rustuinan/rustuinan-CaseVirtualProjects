@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3171903200933605854}
   - component: {fileID: 8189185458228122361}
   - component: {fileID: 4007180659862980152}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 6679458828995230715}
   - component: {fileID: 3855351641908097398}
   - component: {fileID: 106624026365897355}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Sphere-Commander
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -152,17 +152,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: deac83158439cd44f98dc5219063cd4f, type: 2}
   team: 1
-  modelTransform: {fileID: 3171903200933605854}
-  hopHeight: 0.25
-  hopDuration: 0.25
-  rollSpeed: 360
+  model: {fileID: 0}
   unitLayer:
     serializedVersion: 2
     m_Bits: 4294967295
-  searchRadius: 40
-  targetSearchInterval: 0.2
+  detectionRadius: 40
   separationRadius: 1.5
   separationStrength: 0.7
-  renderers: []
-  chargeColor: {r: 0, g: 1, b: 1, a: 1}
-  chargeScaleMultiplier: 1.3
+  sphereStopOffset: 1.5

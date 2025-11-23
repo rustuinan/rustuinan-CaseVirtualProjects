@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 1095183529775694076}
   - component: {fileID: 5911583403253873824}
   - component: {fileID: 5934975133487532711}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 6832501311764359935}
   - component: {fileID: 5042641602491304607}
   - component: {fileID: 6324283103706679532}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SphereUnit-Archer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -160,3 +160,5 @@ MonoBehaviour:
     m_Bits: 4294967295
   searchRadius: 50
   targetSearchInterval: 0.3
+  separationRadius: 1.2
+  separationStrength: 0.7

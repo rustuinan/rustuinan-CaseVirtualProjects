@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8952040707168088601}
   - component: {fileID: 4456548359278012678}
   - component: {fileID: 7778128611597518430}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: CubeUnit-Archer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -77,6 +77,8 @@ MonoBehaviour:
     m_Bits: 4294967295
   searchRadius: 50
   targetSearchInterval: 0.3
+  separationRadius: 1.2
+  separationStrength: 0.7
 --- !u!1 &8361425933370266251
 GameObject:
   m_ObjectHideFlags: 0
@@ -88,7 +90,7 @@ GameObject:
   - component: {fileID: 1072180992449114394}
   - component: {fileID: 3417535425988860784}
   - component: {fileID: 8552482909706053641}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}

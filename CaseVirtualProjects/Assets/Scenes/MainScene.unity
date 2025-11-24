@@ -15,8 +15,8 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
+  m_FogColor: {r: 0.7264151, g: 0.7024297, b: 0.7024297, a: 1}
+  m_FogMode: 1
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
@@ -5983,6 +5983,7 @@ Transform:
   - {fileID: 1972674603}
   - {fileID: 870640302}
   - {fileID: 1862482635}
+  - {fileID: 1807303969}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &439225694
@@ -25557,6 +25558,55 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3b7f06869bdac9e4dba8393342d136dc, type: 3}
+--- !u!1 &1807303968
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1807303969}
+  - component: {fileID: 1807303970}
+  m_Layer: 0
+  m_Name: VFXPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1807303969
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1807303968}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 435360783}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1807303970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1807303968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a16a2e46727f614e86d0012b6d28de5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prewarmVfx:
+  - prefab: {fileID: 5100574548608525955, guid: 04ecb4c679afa30429079feec8ed21a8, type: 3}
+    initialCount: 50
+  - prefab: {fileID: 5100574548608525955, guid: 68edb8f32a658414eb3d0fefded49b65, type: 3}
+    initialCount: 50
 --- !u!4 &1812791730 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8156729280578085309, guid: 780623ad9d976fe4f93825f0fe9b0c04, type: 3}
@@ -28834,6 +28884,7 @@ GameObject:
   - component: {fileID: 2015652886}
   - component: {fileID: 2015652884}
   - component: {fileID: 2015652885}
+  - component: {fileID: 2015652887}
   m_Layer: 0
   m_Name: GodModeCamera
   m_TagString: MainCamera
@@ -28909,7 +28960,7 @@ MonoBehaviour:
   minHeight: 10
   maxHeight: 40
   tiltAngle: 60
-  lightningRadius: 5
+  lightningRadius: 2
   lightningDamage: 150
   lightningCooldown: 3
   lightningVfxPrefab: {fileID: 5627696518775099638, guid: 390cc74915d4a054bbd897e1885047a4, type: 3}
@@ -28936,6 +28987,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!81 &2015652887
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2015652883}
+  m_Enabled: 1
 --- !u!4 &2018170620 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4583598910362228311, guid: 1bdc3edce65634c45987bd09109116bd, type: 3}

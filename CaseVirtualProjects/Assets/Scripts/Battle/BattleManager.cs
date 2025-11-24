@@ -19,11 +19,9 @@ public class BattleManager : MonoBehaviour
     public int maxAttackersPerTarget = 6;
     public float crowdRangeMultiplier = 1.2f;
 
-    // Melee listeleri
     private readonly List<MeleeUnit> cubes = new List<MeleeUnit>(128);
     private readonly List<MeleeUnit> spheres = new List<MeleeUnit>(128);
 
-    // Archer listeleri
     private readonly List<ArcherUnit> cubeArchers = new List<ArcherUnit>(128);
     private readonly List<ArcherUnit> sphereArchers = new List<ArcherUnit>(128);
 
@@ -97,7 +95,6 @@ public class BattleManager : MonoBehaviour
 
         Vector3 myPos = unit.transform.position;
 
-        // 1) Melee düşmanlar
         List<MeleeUnit> enemyMelee = unit.team == Team.Cube ? spheres : cubes;
         MeleeUnit closestMelee = null;
         float closestMeleeDist = float.MaxValue;

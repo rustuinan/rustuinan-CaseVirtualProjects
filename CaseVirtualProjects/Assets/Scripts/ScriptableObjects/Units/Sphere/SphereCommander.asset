@@ -20,6 +20,9 @@ MonoBehaviour:
   attackRange: 1.8
   attackSpeed: 1.1
   moveSpeed: 4.2
+  deathVfxPrefab: {fileID: 5100574548608525955, guid: 68edb8f32a658414eb3d0fefded49b65, type: 3}
+  deathVfxLifetime: 1.5
+  hitSfx: {fileID: 8300000, guid: 29bde6326b4c34ad8a12da475f79b50a, type: 3}
   unitPrefab: {fileID: 8940422777442241550, guid: efea020f31d188943b6d944fe4969dab, type: 3}
   projectilePrefab: {fileID: 0}
   canFallbackMelee: 1

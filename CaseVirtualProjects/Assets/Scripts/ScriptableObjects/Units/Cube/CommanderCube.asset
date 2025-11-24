@@ -20,6 +20,9 @@ MonoBehaviour:
   attackRange: 1.8
   attackSpeed: 1.1
   moveSpeed: 4.2
+  deathVfxPrefab: {fileID: 5100574548608525955, guid: 04ecb4c679afa30429079feec8ed21a8, type: 3}
+  deathVfxLifetime: 1.5
+  hitSfx: {fileID: 8300000, guid: 29bde6326b4c34ad8a12da475f79b50a, type: 3}
   unitPrefab: {fileID: 8940422777442241550, guid: efea020f31d188943b6d944fe4969dab, type: 3}
   projectilePrefab: {fileID: 0}
   canFallbackMelee: 1
@@ -33,18 +36,12 @@ MonoBehaviour:
   slamDamage: 40
   slamRadius: 3
   slamCooldown: 6
-  warCryRadius: 5
-  warCryCooldown: 10
-  warCryMaxTargets: 10
   chargeDamage: 30
   chargeDistance: 6
   chargeSpeed: 10
   chargeRadius: 1.2
   chargeCooldown: 7
   chargeKnockbackDistance: 2.5
-  energyBurstDamage: 60
-  energyBurstRadius: 4
-  energyBurstCooldown: 6
   cost: 1
   damageRandomPercent: 0.1
   attackSpeedRandomPercent: 0.05

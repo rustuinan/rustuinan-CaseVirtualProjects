@@ -20,13 +20,28 @@ MonoBehaviour:
   attackRange: 1.5
   attackSpeed: 1
   moveSpeed: 3.5
+  deathVfxPrefab: {fileID: 5100574548608525955, guid: 04ecb4c679afa30429079feec8ed21a8, type: 3}
+  deathVfxLifetime: 1.5
+  hitSfx: {fileID: 8300000, guid: 29bde6326b4c34ad8a12da475f79b50a, type: 3}
   unitPrefab: {fileID: 8940422777442241550, guid: efea020f31d188943b6d944fe4969dab, type: 3}
   projectilePrefab: {fileID: 0}
+  canFallbackMelee: 1
+  fallbackMeleeDamage: 7
+  fallbackMeleeRange: 1.3
   canHeal: 0
   healAmount: 10
   healCooldown: 5
   areaRadius: 2
   isCommander: 0
+  slamDamage: 180
+  slamRadius: 7
+  slamCooldown: 5
+  chargeDamage: 130
+  chargeDistance: 9
+  chargeSpeed: 16
+  chargeRadius: 2.5
+  chargeCooldown: 5.5
+  chargeKnockbackDistance: 7
   cost: 1
   damageRandomPercent: 0.1
   attackSpeedRandomPercent: 0.05

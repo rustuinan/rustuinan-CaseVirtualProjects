@@ -17,6 +17,13 @@ public class UnitConfig : ScriptableObject
     public float attackSpeed = 1.2f;
     public float moveSpeed = 4f;
 
+    [Header("VFX")]
+    public GameObject deathVfxPrefab;
+    public float deathVfxLifetime = 1.5f;
+
+    [Header("SFX")]
+    public AudioClip hitSfx;
+
     [Header("Prefab Referansları")]
     public GameObject unitPrefab;
     public GameObject projectilePrefab;
@@ -61,4 +68,3 @@ public class UnitConfig : ScriptableObject
     [Range(0f, 1f)]
     public float dodgeChance = 0.05f;
 }
-

@@ -15,6 +15,10 @@ public class MeleeUnit : MonoBehaviour
     public float cubeHopDuration = 0.25f;
     public float sphereRollSpeed = 360f;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    [Range(0f, 1f)] public float hitVolume = 0.15f;
+
     private float currentHealth;
     private float attackTimer;
     private bool isMoving;
@@ -26,6 +30,14 @@ public class MeleeUnit : MonoBehaviour
     private Tween hitTween;
 
     public bool IsAlive => currentHealth > 0f;
+
+    private void Awake()
+    {
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+        }
+    }
 
     void Start()
     {
@@ -59,6 +71,16 @@ public class MeleeUnit : MonoBehaviour
             modelTransform.Rotate(Vector3.forward * sphereRollSpeed * Time.deltaTime);
         }
     }
+
+
+    private void PlayHitSound()
+    {
+        if (audioSource == null) return;
+        if (config == null || config.hitSfx == null) return;
+
+        audioSource.PlayOneShot(config.hitSfx, hitVolume);
+    }
+
 
     public void MoveTowards(Vector3 targetPos)
     {
@@ -187,6 +209,7 @@ public class MeleeUnit : MonoBehaviour
         currentHealth -= amount;
 
         PlayHitAnimation();
+        PlayHitSound();
 
         if (currentHealth <= 0)
         {
@@ -198,8 +221,16 @@ public class MeleeUnit : MonoBehaviour
     {
         isMoving = false;
         StopAllAnimations();
+
+        if (config.deathVfxPrefab != null && VfxPool.Instance != null)
+        {
+            Vector3 vfxPos = transform.position + Vector3.up * 0.1f;
+            VfxPool.Instance.PlayOneShot(config.deathVfxPrefab, vfxPos, config.deathVfxLifetime);
+        }
+
         gameObject.SetActive(false);
     }
+
 
     private void StartMoveAnimation()
     {

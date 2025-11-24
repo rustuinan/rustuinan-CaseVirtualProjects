@@ -21,6 +21,10 @@ public class ArcherUnit : MonoBehaviour
     public float separationRadius = 1.2f;
     public float separationStrength = 0.7f;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    [Range(0f, 1f)] public float hitVolume = 0.15f;
+
     private float currentHealth;
     private float attackTimer;
     private float targetSearchTimer;
@@ -32,6 +36,12 @@ public class ArcherUnit : MonoBehaviour
     private Tween hitTween;
 
     public bool IsAlive => currentHealth > 0f;
+
+    private void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+    }
 
     private void Start()
     {
@@ -88,11 +98,9 @@ public class ArcherUnit : MonoBehaviour
         if (inMeleeMode)
         {
             MoveTowards(targetPos, dt);
-
             DoFallbackMeleeAttack();
             return;
         }
-
 
         if (dist > rangedRadius)
         {
@@ -103,6 +111,16 @@ public class ArcherUnit : MonoBehaviour
         ApplySeparationOnly(dt);
         DoRangedAttack(targetPos);
     }
+
+
+    private void PlayHitSound()
+    {
+        if (audioSource == null) return;
+        if (config == null || config.hitSfx == null) return;
+
+        audioSource.PlayOneShot(config.hitSfx, hitVolume);
+    }
+
 
     private Transform FindClosestEnemy()
     {
@@ -249,6 +267,7 @@ public class ArcherUnit : MonoBehaviour
         return separation.normalized * separationStrength;
     }
 
+
     private void DoRangedAttack(Vector3 targetPos)
     {
         if (attackTimer > 0f)
@@ -335,6 +354,7 @@ public class ArcherUnit : MonoBehaviour
 
         currentHealth -= amount;
         PlayHitAnimation();
+        PlayHitSound();
 
         if (currentHealth <= 0)
         {
@@ -347,8 +367,15 @@ public class ArcherUnit : MonoBehaviour
         if (shootTween != null && shootTween.IsActive()) shootTween.Kill();
         if (hitTween != null && hitTween.IsActive()) hitTween.Kill();
 
+        if (config.deathVfxPrefab != null && VfxPool.Instance != null)
+        {
+            Vector3 vfxPos = transform.position + Vector3.up * 0.1f;
+            VfxPool.Instance.PlayOneShot(config.deathVfxPrefab, vfxPos, config.deathVfxLifetime);
+        }
+
         gameObject.SetActive(false);
     }
+
 
     private void PlayShootAnimation()
     {

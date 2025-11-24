@@ -24,6 +24,10 @@ public class CommanderUnit : MonoBehaviour
     [Header("Sphere Line Bash Extra")]
     public float sphereStopOffset = 1.5f;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    [Range(0f, 1f)] public float hitVolume = 0.15f;
+
     private float currentHealth;
     private float attackTimer;
     private float skillCooldownTimer;
@@ -45,6 +49,12 @@ public class CommanderUnit : MonoBehaviour
     private Tween attackTween;
 
     public bool IsAlive => currentHealth > 0f;
+
+    private void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+    }
 
     private void OnEnable()
     {
@@ -96,7 +106,6 @@ public class CommanderUnit : MonoBehaviour
         {
             if (skillCooldownTimer <= 0f && HasEnemyInRadius(config.slamRadius * 0.9f))
             {
-                Debug.Log($"[Commander {name}] CUBE SLAM TRIGGERED");
                 DoCubeSlam();
                 return;
             }
@@ -109,7 +118,6 @@ public class CommanderUnit : MonoBehaviour
 
                 if (distToTarget > 2f && distToTarget < config.chargeDistance * 1.5f)
                 {
-                    Debug.Log($"[Commander {name}] SPHERE BASH TRIGGER CHECK, dist={distToTarget:F2}");
                     DoSphereLineBash();
                     return;
                 }
@@ -125,6 +133,16 @@ public class CommanderUnit : MonoBehaviour
             DoMeleeAttack();
         }
     }
+
+
+    private void PlayHitSound()
+    {
+        if (audioSource == null) return;
+        if (config == null || config.hitSfx == null) return;
+
+        audioSource.PlayOneShot(config.hitSfx, hitVolume);
+    }
+
 
     private void UpdateTarget()
     {
@@ -212,10 +230,7 @@ public class CommanderUnit : MonoBehaviour
             var a = t.GetComponentInParent<ArcherUnit>();
             var c = t.GetComponentInParent<CommanderUnit>();
 
-            bool isUnit =
-                (m != null) ||
-                (a != null) ||
-                (c != null);
+            bool isUnit = (m != null) || (a != null) || (c != null);
 
             if (!isUnit)
                 continue;
@@ -323,7 +338,6 @@ public class CommanderUnit : MonoBehaviour
 
         if (model == null)
         {
-            Debug.Log($"[Commander {name}] Cube Slam (no model) → damage apply");
             ApplyCubeSlamDamage();
             attackTimer = 0f;
             state = CommanderState.Idle;
@@ -335,14 +349,11 @@ public class CommanderUnit : MonoBehaviour
         float upTime = 0.22f;
         float downTime = 0.18f;
 
-        Debug.Log($"[Commander {name}] Cube Slam JUMP");
-
         skillTween = DOTween.Sequence()
             .Append(model.DOLocalMoveY(y0 + jumpHeight, upTime).SetEase(Ease.OutQuad))
             .Append(model.DOLocalMoveY(y0, downTime).SetEase(Ease.InQuad))
             .OnComplete(() =>
             {
-                Debug.Log($"[Commander {name}] Cube Slam LAND → apply damage");
                 ApplyCubeSlamDamage();
                 attackTimer = 0f;
                 state = CommanderState.Idle;
@@ -352,8 +363,6 @@ public class CommanderUnit : MonoBehaviour
     private void ApplyCubeSlamDamage()
     {
         Collider[] hits = Physics.OverlapSphere(transform.position, config.slamRadius, unitLayer);
-
-        int hitCount = 0;
 
         foreach (var col in hits)
         {
@@ -372,13 +381,9 @@ public class CommanderUnit : MonoBehaviour
 
             if (TryDamage(t, dmg))
             {
-                hitCount++;
-                Debug.Log($"[Commander {name}] Cube Slam HIT → {t.name}");
                 ApplyRadialKnockback(t, 4.5f);
             }
         }
-
-        Debug.Log($"[Commander {name}] Cube Slam total hits: {hitCount}");
     }
 
     private void ApplyRadialKnockback(Transform target, float distance)
@@ -422,7 +427,6 @@ public class CommanderUnit : MonoBehaviour
         float distToTarget = dir.magnitude;
         if (distToTarget < 1f)
         {
-            Debug.Log($"[Commander {name}] Sphere Bash CANCEL (too close) dist={distToTarget:F2}");
             state = CommanderState.Idle;
             return;
         }
@@ -440,14 +444,11 @@ public class CommanderUnit : MonoBehaviour
         Vector3 backPos = dashStart - dir * backDistance;
         float backTime = 0.12f;
 
-        Debug.Log($"[Commander {name}] Sphere Bash START → back then dash, travel={travel:F2}");
-
         skillTween = DOTween.Sequence()
             .Append(transform.DOMove(backPos, backTime).SetEase(Ease.InQuad))
             .Append(transform.DOMove(dashEnd, dashDuration).SetEase(Ease.OutQuad))
             .OnComplete(() =>
             {
-                Debug.Log($"[Commander {name}] Sphere Bash IMPACT at {dashEnd}");
                 ApplySphereLineBashDamage(dashEnd, dir);
                 attackTimer = 0f;
                 state = CommanderState.Idle;
@@ -459,8 +460,6 @@ public class CommanderUnit : MonoBehaviour
         float radius = config.chargeRadius * 1.5f;
 
         Collider[] hits = Physics.OverlapSphere(impactPos, radius, unitLayer);
-
-        int hitCount = 0;
 
         foreach (var col in hits)
         {
@@ -479,13 +478,9 @@ public class CommanderUnit : MonoBehaviour
 
             if (TryDamage(t, dmg))
             {
-                hitCount++;
-                Debug.Log($"[Commander {name}] Sphere Bash HIT → {t.name}");
                 ApplyLinearKnockback(t, dir, config.chargeKnockbackDistance);
             }
         }
-
-        Debug.Log($"[Commander {name}] Sphere Bash total hits: {hitCount}");
     }
 
     private void ApplyLinearKnockback(Transform target, Vector3 dir, float distance)
@@ -502,6 +497,7 @@ public class CommanderUnit : MonoBehaviour
         target.DOMove(endPos, 0.3f).SetEase(Ease.OutQuad);
     }
 
+
     public void TakeDamage(float amount)
     {
         if (config.dodgeChance > 0f)
@@ -512,7 +508,7 @@ public class CommanderUnit : MonoBehaviour
         }
 
         currentHealth -= amount;
-
+        PlayHitSound();
         if (currentHealth <= 0f)
             Die();
     }
@@ -526,6 +522,13 @@ public class CommanderUnit : MonoBehaviour
             attackTween.Kill();
 
         state = CommanderState.Idle;
+
+        if (config.deathVfxPrefab != null && VfxPool.Instance != null)
+        {
+            Vector3 vfxPos = transform.position + Vector3.up * 0.1f;
+            VfxPool.Instance.PlayOneShot(config.deathVfxPrefab, vfxPos, config.deathVfxLifetime);
+        }
+
         gameObject.SetActive(false);
     }
 }

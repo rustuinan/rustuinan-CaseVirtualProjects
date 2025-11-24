@@ -17,15 +17,34 @@ public class GodModeCameraController : MonoBehaviour
     public float lightningDamage = 150f;
     public float lightningCooldown = 3f;
 
+    [Header("Lightning VFX")]
+    public GameObject lightningVfxPrefab;
+    public float lightningVfxLifetime = 2f;
+
     public LayerMask groundLayer;
     public LayerMask unitLayer;
 
-    public Transform indicator;
+    [Header("Aim Göstergesi")]
+    public Transform indicator;    // Aim PNG’ini taşıyan obje (Quad / Sprite vs.)
 
     private float currentCooldown;
     private Camera cam;
 
     private static Collider[] strikeResults = new Collider[128];
+
+    private void OnEnable()
+    {
+        // God mode açıldığında indicator başta kapalı olsun
+        if (indicator != null)
+            indicator.gameObject.SetActive(false);
+    }
+
+    private void OnDisable()
+    {
+        // God mode kapandığında indicator tamamen kaybolsun
+        if (indicator != null)
+            indicator.gameObject.SetActive(false);
+    }
 
     private void Start()
     {
@@ -86,16 +105,18 @@ public class GodModeCameraController : MonoBehaviour
         {
             Vector3 targetPos = hit.point;
 
-
+            // AİM GÖSTERGESİ – mouse’un gezdiği yerde gezen görsel
             if (indicator != null)
             {
                 Vector3 indPos = targetPos;
-                indPos.y += 0.05f;
+                indPos.y += 0.05f;          // zemine hafif yukarıda dursun
                 indicator.position = indPos;
+
                 if (!indicator.gameObject.activeSelf)
                     indicator.gameObject.SetActive(true);
             }
 
+            // Sol tık → şimşek
             if (Input.GetMouseButtonDown(0))
             {
                 if (currentCooldown > 0f)
@@ -111,9 +132,10 @@ public class GodModeCameraController : MonoBehaviour
         }
         else
         {
+            // Ground’a ray değmiyorsa aim göstergesi gizlensin
             if (indicator != null && indicator.gameObject.activeSelf)
             {
-                // indicator.gameObject.SetActive(false);
+                indicator.gameObject.SetActive(false);
             }
 
             if (Input.GetMouseButtonDown(0))
@@ -129,6 +151,15 @@ public class GodModeCameraController : MonoBehaviour
 
         Debug.Log($"[GodMode] LIGHTNING STRIKE at {center}, radius={lightningRadius}");
 
+        // Şimşek VFX spawn
+        if (lightningVfxPrefab != null)
+        {
+            Vector3 vfxPos = center + Vector3.up * 0.1f;
+            GameObject vfx = Instantiate(lightningVfxPrefab, vfxPos, Quaternion.identity);
+            Destroy(vfx, lightningVfxLifetime);
+        }
+
+        // İstersen kamerayı da sallayabilirsin:
         // transform.DOShakePosition(0.2f, 0.5f, 10, 90f);
 
         int count = Physics.OverlapSphereNonAlloc(

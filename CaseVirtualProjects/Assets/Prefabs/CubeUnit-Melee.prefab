@@ -30,7 +30,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2648937324545525436}
   m_Father: {fileID: 1011078148191580861}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8214128187454759212
@@ -61,7 +62,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0ff191da4a99ced43b5ee31cb96671b9, type: 2}
+  - {fileID: 2100000, guid: aeab2681ac660394ebcd8f9bed7627ae, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -115,7 +116,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4222365849960763423}
-  - {fileID: 2648937324545525436}
   - {fileID: 4505401454311533085}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -164,7 +164,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1011078148191580861}
+    m_TransformParent: {fileID: 4222365849960763423}
     m_Modifications:
     - target: {fileID: 100000, guid: c9f23f267ed37f4409b937cb672f3c61, type: 3}
       propertyPath: m_Name

@@ -59,7 +59,22 @@ public class CameraManager : MonoBehaviour
     public void StartBattleWithSpectator()
     {
         startInUIMode = false;
-        ForceSetMode(false);
+
+        if (godCamera != null)
+            godCamera.gameObject.SetActive(false);
+        if (godController != null)
+            godController.enabled = false;
+
+        if (spectatorCamera != null)
+            spectatorCamera.gameObject.SetActive(true);
+        if (spectatorController != null)
+            spectatorController.enabled = true;
+
+        isGodMode = false;
+        isTransitioning = false;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void ForceSetMode(bool godMode)
@@ -152,5 +167,18 @@ public class CameraManager : MonoBehaviour
         }
 
         isTransitioning = false;
+    }
+
+    public void DisableBattleCameras()
+    {
+        if (spectatorCamera != null)
+            spectatorCamera.gameObject.SetActive(false);
+        if (godCamera != null)
+            godCamera.gameObject.SetActive(false);
+
+        if (spectatorController != null)
+            spectatorController.enabled = false;
+        if (godController != null)
+            godController.enabled = false;
     }
 }

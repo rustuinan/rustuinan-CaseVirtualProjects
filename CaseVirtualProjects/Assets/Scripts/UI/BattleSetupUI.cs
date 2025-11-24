@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public enum FormationType
 {
@@ -46,6 +47,10 @@ public class BattleSetupUI : MonoBehaviour
     [Tooltip("Tek formasyonda max birim sayısı")]
     public int maxUnitsPerType = 200;
 
+    [Header("Showcase")]
+    public Camera showcaseCamera;
+    public float showcaseDuration = 3f;
+
     private bool battleStarted = false;
 
     private void Start()
@@ -63,6 +68,9 @@ public class BattleSetupUI : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+
+        if (showcaseCamera != null)
+            showcaseCamera.gameObject.SetActive(false);
     }
 
     private void SetupDropdown(TMP_Dropdown dd)
@@ -103,8 +111,6 @@ public class BattleSetupUI : MonoBehaviour
             return;
 
         battleStarted = true;
-
-        Time.timeScale = 1f;
 
         if (poolManager == null)
             poolManager = UnitPoolManager.Instance;
@@ -149,16 +155,14 @@ public class BattleSetupUI : MonoBehaviour
         if (rootPanel != null)
             rootPanel.SetActive(false);
 
-        if (cameraManager != null)
-        {
-            cameraManager.StartBattleWithSpectator();
-        }
-        else
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
+        Time.timeScale = 0f;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        StartCoroutine(ShowcaseRoutine());
     }
+
 
     private int ReadInput(TMP_InputField field)
     {
@@ -173,6 +177,40 @@ public class BattleSetupUI : MonoBehaviour
     }
 
 
+    private IEnumerator ShowcaseRoutine()
+    {
+        if (cameraManager != null)
+            cameraManager.DisableBattleCameras();
+
+        if (showcaseCamera != null)
+            showcaseCamera.gameObject.SetActive(true);
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        yield return new WaitForSecondsRealtime(showcaseDuration);
+
+
+        if (FadeController.Instance != null)
+            yield return FadeController.Instance.FadeOut(0.5f);
+
+        if (showcaseCamera != null)
+            showcaseCamera.gameObject.SetActive(false);
+
+        Time.timeScale = 1f;
+
+        if (cameraManager != null)
+            cameraManager.StartBattleWithSpectator();
+
+
+        if (FadeController.Instance != null)
+            yield return FadeController.Instance.FadeIn(2.5f);
+    }
+
+
+
+
+
     private void SpawnTeam(bool isCubeTeam, FormationType formation,
                            int meleeCount, int archerCount, int commanderCount,
                            Transform origin)
@@ -181,9 +219,7 @@ public class BattleSetupUI : MonoBehaviour
             return;
 
         List<Vector2> meleeOffsets = GenerateFormationPositions(formation, meleeCount);
-
         List<Vector2> archerOffsets = GenerateFormationPositions(formation, archerCount);
-
         List<Vector2> commanderOffsets = GenerateFormationPositions(FormationType.Line, commanderCount);
 
         float meleeRowShift = 0f;
@@ -226,7 +262,6 @@ public class BattleSetupUI : MonoBehaviour
             obj.SetActive(true);
         }
     }
-
 
     private List<Vector2> GenerateFormationPositions(FormationType formation, int count)
     {

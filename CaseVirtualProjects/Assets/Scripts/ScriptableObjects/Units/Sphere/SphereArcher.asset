@@ -16,9 +16,9 @@ MonoBehaviour:
   displayName: Archer Sphere
   soldierType: 1
   maxHealth: 100
-  attackDamage: 10
+  attackDamage: 12
   attackRange: 10
-  attackSpeed: 1.2
+  attackSpeed: 1.4
   moveSpeed: 4
   deathVfxPrefab: {fileID: 5100574548608525955, guid: 68edb8f32a658414eb3d0fefded49b65, type: 3}
   deathVfxLifetime: 1.5

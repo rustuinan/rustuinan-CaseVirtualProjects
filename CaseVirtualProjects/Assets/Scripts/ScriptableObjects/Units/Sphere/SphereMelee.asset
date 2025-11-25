@@ -17,7 +17,7 @@ MonoBehaviour:
   soldierType: 0
   maxHealth: 100
   attackDamage: 10
-  attackRange: 1.5
+  attackRange: 2
   attackSpeed: 1
   moveSpeed: 3.5
   deathVfxPrefab: {fileID: 5100574548608525955, guid: 68edb8f32a658414eb3d0fefded49b65, type: 3}

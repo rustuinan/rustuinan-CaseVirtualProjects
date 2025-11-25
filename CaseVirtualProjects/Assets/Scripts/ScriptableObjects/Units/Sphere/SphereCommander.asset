@@ -15,7 +15,7 @@ MonoBehaviour:
   id: commander_cube_01
   displayName: CommanderCube
   soldierType: 3
-  maxHealth: 500
+  maxHealth: 300
   attackDamage: 25
   attackRange: 1.8
   attackSpeed: 1.1
@@ -32,16 +32,16 @@ MonoBehaviour:
   healAmount: 10
   healCooldown: 5
   areaRadius: 2
-  isCommander: 0
+  isCommander: 1
   slamDamage: 180
   slamRadius: 7
   slamCooldown: 5
-  chargeDamage: 30
+  chargeDamage: 40
   chargeDistance: 8
   chargeSpeed: 10
-  chargeRadius: 5
-  chargeCooldown: 5
-  chargeKnockbackDistance: 4
+  chargeRadius: 7
+  chargeCooldown: 6
+  chargeKnockbackDistance: 7
   cost: 1
   damageRandomPercent: 0.1
   attackSpeedRandomPercent: 0.05

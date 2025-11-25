@@ -34223,7 +34223,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: c476071ae5b7a3d498788a046ba3b10d, type: 3}
   - {fileID: 8300000, guid: d4aa9bb52c0841c4282f70a8fff6b86a, type: 3}
   - {fileID: 8300000, guid: 2de6f55f5b5d4654d869d8511b793fde, type: 3}
-  musicVolume: 0.05
+  musicVolume: 0.016
 --- !u!1001 &2071146985
 PrefabInstance:
   m_ObjectHideFlags: 0

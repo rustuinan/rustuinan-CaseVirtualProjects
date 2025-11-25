@@ -24,6 +24,21 @@ public class CommanderUnit : MonoBehaviour
     [Header("Sphere Line Bash Extra")]
     public float sphereStopOffset = 1.5f;
 
+    [Header("Melee Attack Visual")]
+    public float cubeAttackPunchDistance = 0.7f;
+    public float sphereAttackPunchDistance = 0.5f;
+    public float attackPunchDuration = 0.2f;
+    public int attackPunchVibrato = 8;
+    [Range(0f, 1f)] public float attackPunchElasticity = 0.5f;
+
+    [Header("Cube Slam Visual")]
+    public float cubeSlamJumpHeight = 2.5f;
+    public float cubeSlamUpTime = 0.25f;
+    public float cubeSlamDownTime = 0.2f;
+
+    [Header("Cube Slam Knockback")]
+    public float cubeSlamKnockbackDistance = 6f;
+
     [Header("Audio")]
     public AudioSource audioSource;
     [Range(0f, 1f)] public float hitVolume = 0.15f;
@@ -54,6 +69,10 @@ public class CommanderUnit : MonoBehaviour
     {
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
+
+        // Model atanmadıysa otomatik bir child seçmeye çalış
+        if (model == null && transform.childCount > 0)
+            model = transform.GetChild(0);
     }
 
     private void OnEnable()
@@ -73,9 +92,13 @@ public class CommanderUnit : MonoBehaviour
         attackTimer = Random.Range(0f, 1f / Mathf.Max(0.01f, config.attackSpeed));
         state = CommanderState.Idle;
 
+        if (model == null && transform.childCount > 0)
+            model = transform.GetChild(0);
+
         if (model != null)
             originalModelLocalPos = model.localPosition;
 
+        // Komutan biraz büyük gözüksün
         transform.localScale = Vector3.one * 1.5f;
     }
 
@@ -102,6 +125,7 @@ public class CommanderUnit : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, currentTarget.position);
 
+        // CUBE SKILL (SLAM)
         if (team == Team.Cube)
         {
             if (skillCooldownTimer <= 0f && HasEnemyInRadius(config.slamRadius * 0.9f))
@@ -110,6 +134,7 @@ public class CommanderUnit : MonoBehaviour
                 return;
             }
         }
+        // SPHERE SKILL (LINE BASH)
         else if (team == Team.Sphere)
         {
             if (skillCooldownTimer <= 0f)
@@ -134,7 +159,6 @@ public class CommanderUnit : MonoBehaviour
         }
     }
 
-
     private void PlayHitSound()
     {
         if (audioSource == null) return;
@@ -142,7 +166,6 @@ public class CommanderUnit : MonoBehaviour
 
         audioSource.PlayOneShot(config.hitSfx, hitVolume);
     }
-
 
     private void UpdateTarget()
     {
@@ -278,7 +301,6 @@ public class CommanderUnit : MonoBehaviour
         }
 
         PlayMeleeAttackAnimation();
-
         TryDamage(currentTarget, dmg);
     }
 
@@ -290,13 +312,36 @@ public class CommanderUnit : MonoBehaviour
         if (attackTween != null && attackTween.IsActive())
             attackTween.Kill();
 
-        float distance = (team == Team.Cube) ? 0.4f : 0.25f;
-        float duration = 0.18f;
+        // Model kaydıysa resetle
+        model.localPosition = originalModelLocalPos;
 
-        Vector3 punch = transform.forward * distance;
+        float distance = (team == Team.Cube) ? cubeAttackPunchDistance : sphereAttackPunchDistance;
+        float duration = attackPunchDuration;
+
+        // Mümkünse hedefe doğru vur
+        Vector3 dirWorld;
+
+        if (currentTarget != null)
+        {
+            dirWorld = (currentTarget.position - model.position);
+            dirWorld.y = 0f;
+
+            if (dirWorld.sqrMagnitude < 0.0001f)
+                dirWorld = transform.forward;
+        }
+        else
+        {
+            dirWorld = transform.forward;
+        }
+
+        dirWorld.Normalize();
+
+        // World yönünü model local uzayına çevir
+        Vector3 dirLocal = model.InverseTransformDirection(dirWorld).normalized;
+        Vector3 punchLocal = dirLocal * distance;
 
         attackTween = model
-            .DOPunchPosition(punch, duration, 8, 0.5f);
+            .DOPunchPosition(punchLocal, duration, attackPunchVibrato, attackPunchElasticity);
     }
 
     private bool TryDamage(Transform t, float dmg)
@@ -344,10 +389,13 @@ public class CommanderUnit : MonoBehaviour
             return;
         }
 
+        // Model pozisyonunu garantiye al
+        model.localPosition = originalModelLocalPos;
+
         float y0 = originalModelLocalPos.y;
-        float jumpHeight = 1.5f;
-        float upTime = 0.22f;
-        float downTime = 0.18f;
+        float jumpHeight = cubeSlamJumpHeight;
+        float upTime = cubeSlamUpTime;
+        float downTime = cubeSlamDownTime;
 
         skillTween = DOTween.Sequence()
             .Append(model.DOLocalMoveY(y0 + jumpHeight, upTime).SetEase(Ease.OutQuad))
@@ -381,7 +429,8 @@ public class CommanderUnit : MonoBehaviour
 
             if (TryDamage(t, dmg))
             {
-                ApplyRadialKnockback(t, 4.5f);
+                Transform root = GetUnitRoot(t);
+                ApplyRadialKnockback(root, cubeSlamKnockbackDistance);
             }
         }
     }
@@ -478,7 +527,8 @@ public class CommanderUnit : MonoBehaviour
 
             if (TryDamage(t, dmg))
             {
-                ApplyLinearKnockback(t, dir, config.chargeKnockbackDistance);
+                Transform root = GetUnitRoot(t);
+                ApplyLinearKnockback(root, dir, config.chargeKnockbackDistance);
             }
         }
     }
@@ -497,6 +547,19 @@ public class CommanderUnit : MonoBehaviour
         target.DOMove(endPos, 0.3f).SetEase(Ease.OutQuad);
     }
 
+    private Transform GetUnitRoot(Transform t)
+    {
+        var m = t.GetComponentInParent<MeleeUnit>();
+        if (m != null) return m.transform;
+
+        var a = t.GetComponentInParent<ArcherUnit>();
+        if (a != null) return a.transform;
+
+        var c = t.GetComponentInParent<CommanderUnit>();
+        if (c != null) return c.transform;
+
+        return t;
+    }
 
     public void TakeDamage(float amount)
     {

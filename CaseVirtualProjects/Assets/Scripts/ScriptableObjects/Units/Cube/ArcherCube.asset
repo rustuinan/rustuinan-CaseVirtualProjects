@@ -18,7 +18,7 @@ MonoBehaviour:
   maxHealth: 100
   attackDamage: 10
   attackRange: 12
-  attackSpeed: 0.8
+  attackSpeed: 1
   moveSpeed: 4
   deathVfxPrefab: {fileID: 5100574548608525955, guid: 04ecb4c679afa30429079feec8ed21a8, type: 3}
   deathVfxLifetime: 1.5

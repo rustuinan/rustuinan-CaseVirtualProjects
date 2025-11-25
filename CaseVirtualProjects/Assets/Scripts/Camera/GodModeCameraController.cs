@@ -21,16 +21,24 @@ public class GodModeCameraController : MonoBehaviour
     public GameObject lightningVfxPrefab;
     public float lightningVfxLifetime = 2f;
 
+    [Header("Lightning SFX")]
+    public AudioClip lightningSfx;
+    [Range(0f, 1f)]
+    public float lightningSfxVolume = 0.8f;
+
     public LayerMask groundLayer;
     public LayerMask unitLayer;
 
     [Header("Aim Göstergesi")]
     public Transform indicator;
+    public float indicatorHeightOffset = 0.3f;
 
     private float currentCooldown;
     private Camera cam;
 
     private static Collider[] strikeResults = new Collider[128];
+
+    private AudioSource audioSource;
 
     private void OnEnable()
     {
@@ -51,6 +59,14 @@ public class GodModeCameraController : MonoBehaviour
         Vector3 euler = transform.eulerAngles;
         euler.x = tiltAngle;
         transform.eulerAngles = euler;
+
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.playOnAwake = false;
+        audioSource.loop = false;
     }
 
     private void Update()
@@ -106,7 +122,7 @@ public class GodModeCameraController : MonoBehaviour
             if (indicator != null)
             {
                 Vector3 indPos = targetPos;
-                indPos.y += 0.05f;
+                indPos.y = targetPos.y + indicatorHeightOffset;
                 indicator.position = indPos;
 
                 if (!indicator.gameObject.activeSelf)
@@ -152,6 +168,8 @@ public class GodModeCameraController : MonoBehaviour
             GameObject vfx = Instantiate(lightningVfxPrefab, vfxPos, Quaternion.identity);
             Destroy(vfx, lightningVfxLifetime);
         }
+
+        PlayLightningSound();
 
 
         int count = Physics.OverlapSphereNonAlloc(
@@ -213,5 +231,23 @@ public class GodModeCameraController : MonoBehaviour
         {
             Debug.Log("[GodMode] Lightning strike hit NO units.");
         }
+    }
+
+    private void PlayLightningSound()
+    {
+        if (lightningSfx == null)
+            return;
+
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+                audioSource = gameObject.AddComponent<AudioSource>();
+
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+        }
+
+        audioSource.PlayOneShot(lightningSfx, lightningSfxVolume);
     }
 }

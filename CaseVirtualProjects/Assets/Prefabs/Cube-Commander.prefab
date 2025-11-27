@@ -173,6 +173,8 @@ MonoBehaviour:
   cubeSlamKnockbackDistance: 10
   audioSource: {fileID: 0}
   hitVolume: 0.15
+  targetSearchInterval: 0.4
+  separationRecalcInterval: 0.15
 --- !u!82 &-2405785293504086813
 AudioSource:
   m_ObjectHideFlags: 0

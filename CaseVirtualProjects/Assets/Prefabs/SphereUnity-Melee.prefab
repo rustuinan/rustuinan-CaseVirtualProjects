@@ -78,6 +78,8 @@ MonoBehaviour:
   sphereRollSpeed: 360
   audioSource: {fileID: 0}
   hitVolume: 0.15
+  targetSearchInterval: 0.4
+  separationRecalcInterval: 0.12
 --- !u!82 &2559644557534428465
 AudioSource:
   m_ObjectHideFlags: 0

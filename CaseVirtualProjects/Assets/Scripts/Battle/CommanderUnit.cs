@@ -43,9 +43,20 @@ public class CommanderUnit : MonoBehaviour
     public AudioSource audioSource;
     [Range(0f, 1f)] public float hitVolume = 0.15f;
 
+    [Header("Target Search")]
+    public float targetSearchInterval = 0.25f;
+
+    [Header("Optimization")]
+    [Tooltip("Separation vektörünün yeniden hesaplanma aralığı")]
+    public float separationRecalcInterval = 0.15f;
+
     private float currentHealth;
     private float attackTimer;
     private float skillCooldownTimer;
+
+    private float targetSearchTimer;
+    private float separationTimer;
+    private Vector3 cachedSeparation;
 
     private Transform currentTarget;
 
@@ -65,12 +76,16 @@ public class CommanderUnit : MonoBehaviour
 
     public bool IsAlive => currentHealth > 0f;
 
+    private static readonly Collider[] detectionResults = new Collider[256];
+    private static readonly Collider[] separationResults = new Collider[256];
+    private static readonly Collider[] slamResults = new Collider[256];
+    private static readonly Collider[] chargeResults = new Collider[256];
+
     private void Awake()
     {
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
 
-        // Model atanmadıysa otomatik bir child seçmeye çalış
         if (model == null && transform.childCount > 0)
             model = transform.GetChild(0);
     }
@@ -98,8 +113,10 @@ public class CommanderUnit : MonoBehaviour
         if (model != null)
             originalModelLocalPos = model.localPosition;
 
-        // Komutan biraz büyük gözüksün
         transform.localScale = Vector3.one * 1.5f;
+
+        targetSearchTimer = Random.Range(0f, targetSearchInterval);
+        separationTimer = Random.Range(0f, separationRecalcInterval);
     }
 
     private void Update()
@@ -111,11 +128,23 @@ public class CommanderUnit : MonoBehaviour
 
         attackTimer -= dt;
         skillCooldownTimer -= dt;
+        targetSearchTimer -= dt;
+        separationTimer -= dt;
 
         if (state == CommanderState.UsingSkill)
             return;
 
-        UpdateTarget();
+        if (targetSearchTimer <= 0f || currentTarget == null || !IsValidEnemy(currentTarget))
+        {
+            UpdateTarget();
+            targetSearchTimer = targetSearchInterval;
+        }
+
+        if (separationTimer <= 0f)
+        {
+            cachedSeparation = ComputeSeparation();
+            separationTimer = separationRecalcInterval;
+        }
 
         if (currentTarget == null)
         {
@@ -125,7 +154,6 @@ public class CommanderUnit : MonoBehaviour
 
         float dist = Vector3.Distance(transform.position, currentTarget.position);
 
-        // CUBE SKILL (SLAM)
         if (team == Team.Cube)
         {
             if (skillCooldownTimer <= 0f && HasEnemyInRadius(config.slamRadius * 0.9f))
@@ -134,7 +162,6 @@ public class CommanderUnit : MonoBehaviour
                 return;
             }
         }
-        // SPHERE SKILL (LINE BASH)
         else if (team == Team.Sphere)
         {
             if (skillCooldownTimer <= 0f)
@@ -169,14 +196,22 @@ public class CommanderUnit : MonoBehaviour
 
     private void UpdateTarget()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, detectionRadius, unitLayer);
+        Vector3 myPos = transform.position;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            myPos,
+            detectionRadius,
+            detectionResults,
+            unitLayer);
 
         Transform closest = null;
         float closestSqr = float.MaxValue;
-        Vector3 myPos = transform.position;
 
-        foreach (var col in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = detectionResults[i];
+            if (col == null) continue;
+
             Transform t = col.transform;
 
             if (!IsValidEnemy(t))
@@ -209,12 +244,21 @@ public class CommanderUnit : MonoBehaviour
 
     private bool HasEnemyInRadius(float radius)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius, unitLayer);
-        foreach (var col in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            radius,
+            detectionResults,
+            unitLayer);
+
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = detectionResults[i];
+            if (col == null) continue;
+
             if (IsValidEnemy(col.transform))
                 return true;
         }
+
         return false;
     }
 
@@ -225,7 +269,7 @@ public class CommanderUnit : MonoBehaviour
         Vector3 myPos = transform.position;
         Vector3 dir = (targetPos - myPos).normalized;
 
-        Vector3 sep = ComputeSeparation();
+        Vector3 sep = cachedSeparation;
         if (sep.sqrMagnitude > 0.0001f)
         {
             dir += sep;
@@ -237,14 +281,24 @@ public class CommanderUnit : MonoBehaviour
 
     private Vector3 ComputeSeparation()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, separationRadius, unitLayer);
+        Vector3 myPos = transform.position;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            myPos,
+            separationRadius,
+            separationResults,
+            unitLayer);
 
         Vector3 sep = Vector3.zero;
         int count = 0;
-        Vector3 myPos = transform.position;
 
-        foreach (var col in hits)
+        float radiusSqr = separationRadius * separationRadius;
+
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = separationResults[i];
+            if (col == null) continue;
+
             if (col.transform.IsChildOf(transform)) continue;
 
             Transform t = col.transform;
@@ -254,14 +308,12 @@ public class CommanderUnit : MonoBehaviour
             var c = t.GetComponentInParent<CommanderUnit>();
 
             bool isUnit = (m != null) || (a != null) || (c != null);
-
-            if (!isUnit)
-                continue;
+            if (!isUnit) continue;
 
             Vector3 diff = myPos - t.position;
             float sqr = diff.sqrMagnitude;
 
-            if (sqr > 0.01f && sqr < separationRadius * separationRadius)
+            if (sqr > 0.01f && sqr < radiusSqr)
             {
                 sep += diff / sqr;
                 count++;
@@ -273,6 +325,10 @@ public class CommanderUnit : MonoBehaviour
 
         sep /= count;
         sep.y = 0f;
+
+        if (sep == Vector3.zero)
+            return Vector3.zero;
+
         return sep.normalized * separationStrength;
     }
 
@@ -312,13 +368,11 @@ public class CommanderUnit : MonoBehaviour
         if (attackTween != null && attackTween.IsActive())
             attackTween.Kill();
 
-        // Model kaydıysa resetle
         model.localPosition = originalModelLocalPos;
 
         float distance = (team == Team.Cube) ? cubeAttackPunchDistance : sphereAttackPunchDistance;
         float duration = attackPunchDuration;
 
-        // Mümkünse hedefe doğru vur
         Vector3 dirWorld;
 
         if (currentTarget != null)
@@ -335,8 +389,6 @@ public class CommanderUnit : MonoBehaviour
         }
 
         dirWorld.Normalize();
-
-        // World yönünü model local uzayına çevir
         Vector3 dirLocal = model.InverseTransformDirection(dirWorld).normalized;
         Vector3 punchLocal = dirLocal * distance;
 
@@ -389,7 +441,6 @@ public class CommanderUnit : MonoBehaviour
             return;
         }
 
-        // Model pozisyonunu garantiye al
         model.localPosition = originalModelLocalPos;
 
         float y0 = originalModelLocalPos.y;
@@ -410,10 +461,19 @@ public class CommanderUnit : MonoBehaviour
 
     private void ApplyCubeSlamDamage()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, config.slamRadius, unitLayer);
+        Vector3 myPos = transform.position;
 
-        foreach (var col in hits)
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            myPos,
+            config.slamRadius,
+            slamResults,
+            unitLayer);
+
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = slamResults[i];
+            if (col == null) continue;
+
             Transform t = col.transform;
 
             if (!IsValidEnemy(t))
@@ -508,10 +568,17 @@ public class CommanderUnit : MonoBehaviour
     {
         float radius = config.chargeRadius * 1.5f;
 
-        Collider[] hits = Physics.OverlapSphere(impactPos, radius, unitLayer);
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            impactPos,
+            radius,
+            chargeResults,
+            unitLayer);
 
-        foreach (var col in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider col = chargeResults[i];
+            if (col == null) continue;
+
             Transform t = col.transform;
 
             if (!IsValidEnemy(t))

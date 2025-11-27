@@ -22,6 +22,8 @@ public class ArrowProjectile : MonoBehaviour
 
     private ProjectilePool pool;
 
+    private static readonly Collider[] hitResults = new Collider[32];
+
     private void Awake()
     {
         pool = ProjectilePool.Instance;
@@ -83,11 +85,16 @@ public class ArrowProjectile : MonoBehaviour
 
     private void DoHit()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, unitLayer);
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            hitRadius,
+            hitResults,
+            unitLayer);
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider col = hits[i];
+            Collider col = hitResults[i];
+            if (col == null) continue;
 
             MeleeUnit melee = col.GetComponentInParent<MeleeUnit>();
             if (melee != null && melee.IsAlive && melee.team != ownerTeam)
@@ -103,7 +110,6 @@ public class ArrowProjectile : MonoBehaviour
                 return;
             }
         }
-
     }
 
     private void Despawn()

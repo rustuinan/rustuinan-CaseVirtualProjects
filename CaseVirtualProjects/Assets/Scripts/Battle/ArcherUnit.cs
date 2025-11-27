@@ -21,6 +21,10 @@ public class ArcherUnit : MonoBehaviour
     public float separationRadius = 1.2f;
     public float separationStrength = 0.7f;
 
+    [Header("Optimization")]
+    [Tooltip("Separation vektörünün yeniden hesaplanma aralığı")]
+    public float separationRecalcInterval = 0.12f;
+
     [Header("Audio")]
     public AudioSource audioSource;
     [Range(0f, 1f)] public float hitVolume = 0.15f;
@@ -28,14 +32,21 @@ public class ArcherUnit : MonoBehaviour
     private float currentHealth;
     private float attackTimer;
     private float targetSearchTimer;
-    private Transform currentTarget;
 
+    private float separationTimer;
+    private Vector3 cachedSeparation;
+
+    private Transform currentTarget;
     private bool inMeleeMode = false;
 
     private Tween shootTween;
     private Tween hitTween;
 
     public bool IsAlive => currentHealth > 0f;
+
+    private static readonly Collider[] searchResults = new Collider[256];
+    private static readonly Collider[] separationResults = new Collider[256];
+    private static readonly Collider[] meleeResults = new Collider[128];
 
     private void Awake()
     {
@@ -51,6 +62,7 @@ public class ArcherUnit : MonoBehaviour
         attackTimer = Random.Range(0f, baseInterval);
 
         targetSearchTimer = Random.Range(0f, targetSearchInterval);
+        separationTimer = Random.Range(0f, separationRecalcInterval);
 
         if (BattleManager.Instance != null)
             BattleManager.Instance.RegisterArcher(this);
@@ -79,6 +91,13 @@ public class ArcherUnit : MonoBehaviour
 
         if (currentTarget == null)
             return;
+
+        separationTimer -= dt;
+        if (separationTimer <= 0f)
+        {
+            cachedSeparation = ComputeSeparation();
+            separationTimer = separationRecalcInterval;
+        }
 
         Vector3 myPos = transform.position;
         Vector3 targetPos = currentTarget.position;
@@ -112,7 +131,6 @@ public class ArcherUnit : MonoBehaviour
         DoRangedAttack(targetPos);
     }
 
-
     private void PlayHitSound()
     {
         if (audioSource == null) return;
@@ -121,23 +139,25 @@ public class ArcherUnit : MonoBehaviour
         audioSource.PlayOneShot(config.hitSfx, hitVolume);
     }
 
-
     private Transform FindClosestEnemy()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, unitLayer);
+        Vector3 myPos = transform.position;
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            myPos,
+            searchRadius,
+            searchResults,
+            unitLayer);
 
         Transform closest = null;
         float closestSqr = float.MaxValue;
-        Vector3 myPos = transform.position;
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider col = hits[i];
+            Collider col = searchResults[i];
+            if (col == null) continue;
 
             MeleeUnit melee = col.GetComponentInParent<MeleeUnit>();
-            ArcherUnit archer = col.GetComponentInParent<ArcherUnit>();
-            CommanderUnit commander = col.GetComponentInParent<CommanderUnit>();
-
             if (melee != null && melee.IsAlive && melee.team != team)
             {
                 float sqr = (melee.transform.position - myPos).sqrMagnitude;
@@ -149,6 +169,7 @@ public class ArcherUnit : MonoBehaviour
                 continue;
             }
 
+            ArcherUnit archer = col.GetComponentInParent<ArcherUnit>();
             if (archer != null && archer.IsAlive && archer.team != team)
             {
                 float sqr = (archer.transform.position - myPos).sqrMagnitude;
@@ -160,6 +181,7 @@ public class ArcherUnit : MonoBehaviour
                 continue;
             }
 
+            CommanderUnit commander = col.GetComponentInParent<CommanderUnit>();
             if (commander != null && commander.IsAlive && commander.team != team)
             {
                 float sqr = (commander.transform.position - myPos).sqrMagnitude;
@@ -179,7 +201,7 @@ public class ArcherUnit : MonoBehaviour
         Vector3 myPos = transform.position;
         Vector3 dir = (targetPos - myPos).normalized;
 
-        Vector3 separation = ComputeSeparation();
+        Vector3 separation = cachedSeparation;
         if (separation.sqrMagnitude > 0.0001f)
         {
             dir += separation;
@@ -192,7 +214,7 @@ public class ArcherUnit : MonoBehaviour
     private void ApplySeparationOnly(float dt)
     {
         Vector3 myPos = transform.position;
-        Vector3 sep = ComputeSeparation();
+        Vector3 sep = cachedSeparation;
         if (sep.sqrMagnitude > 0.0001f)
         {
             Vector3 pos = myPos + sep * config.moveSpeed * dt * 0.5f;
@@ -203,14 +225,20 @@ public class ArcherUnit : MonoBehaviour
     private Vector3 ComputeSeparation()
     {
         Vector3 myPos = transform.position;
-        Collider[] hits = Physics.OverlapSphere(myPos, separationRadius, unitLayer);
+
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            myPos,
+            separationRadius,
+            separationResults,
+            unitLayer);
 
         Vector3 separation = Vector3.zero;
         int count = 0;
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider col = hits[i];
+            Collider col = separationResults[i];
+            if (col == null) continue;
 
             if (col.transform == this.transform || col.transform.IsChildOf(this.transform))
                 continue;
@@ -267,7 +295,6 @@ public class ArcherUnit : MonoBehaviour
         return separation.normalized * separationStrength;
     }
 
-
     private void DoRangedAttack(Vector3 targetPos)
     {
         if (attackTimer > 0f)
@@ -314,11 +341,16 @@ public class ArcherUnit : MonoBehaviour
             ? config.fallbackMeleeDamage
             : config.attackDamage * 0.3f;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, config.fallbackMeleeRange, unitLayer);
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            config.fallbackMeleeRange,
+            meleeResults,
+            unitLayer);
 
-        for (int i = 0; i < hits.Length; i++)
+        for (int i = 0; i < hitCount; i++)
         {
-            Collider col = hits[i];
+            Collider col = meleeResults[i];
+            if (col == null) continue;
 
             MeleeUnit melee = col.GetComponentInParent<MeleeUnit>();
             if (melee != null && melee.IsAlive && melee.team != team)
@@ -375,7 +407,6 @@ public class ArcherUnit : MonoBehaviour
 
         gameObject.SetActive(false);
     }
-
 
     private void PlayShootAnimation()
     {

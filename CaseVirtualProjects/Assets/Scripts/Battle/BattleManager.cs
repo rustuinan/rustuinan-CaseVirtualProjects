@@ -213,7 +213,112 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    private bool IsTargetCrowded(MeleeUnit requester, MeleeUnit target)
+    public Transform FindBestTargetFor(
+        MeleeUnit unit,
+        out bool finalIsMelee,
+        out MeleeUnit meleeTarget)
+    {
+        finalIsMelee = false;
+        meleeTarget = null;
+
+        if (unit == null || !unit.IsAlive)
+            return null;
+
+        Vector3 myPos = unit.transform.position;
+
+        List<MeleeUnit> enemyMelee = unit.team == Team.Cube ? spheres : cubes;
+        MeleeUnit closestMelee = null;
+        float closestMeleeDist = float.MaxValue;
+
+        for (int i = 0; i < enemyMelee.Count; i++)
+        {
+            MeleeUnit enemy = enemyMelee[i];
+            if (enemy == null || !enemy.IsAlive)
+                continue;
+
+            float dist = (enemy.transform.position - myPos).sqrMagnitude;
+            if (dist < closestMeleeDist)
+            {
+                closestMeleeDist = dist;
+                closestMelee = enemy;
+            }
+        }
+
+        List<ArcherUnit> enemyArchers = unit.team == Team.Cube ? sphereArchers : cubeArchers;
+        ArcherUnit closestArcher = null;
+        float closestArcherDist = float.MaxValue;
+
+        for (int i = 0; i < enemyArchers.Count; i++)
+        {
+            ArcherUnit enemy = enemyArchers[i];
+            if (enemy == null || !enemy.IsAlive)
+                continue;
+
+            float dist = (enemy.transform.position - myPos).sqrMagnitude;
+            if (dist < closestArcherDist)
+            {
+                closestArcherDist = dist;
+                closestArcher = enemy;
+            }
+        }
+
+        CommanderUnit closestCommander = null;
+        float closestCommanderDist = float.MaxValue;
+
+        foreach (var cmd in CommanderUnit.All)
+        {
+            if (cmd == null || !cmd.IsAlive)
+                continue;
+
+            if (cmd.team == unit.team)
+                continue;
+
+            float dist = (cmd.transform.position - myPos).sqrMagnitude;
+            if (dist < closestCommanderDist)
+            {
+                closestCommanderDist = dist;
+                closestCommander = cmd;
+            }
+        }
+
+        if (closestMelee == null && closestArcher == null && closestCommander == null)
+            return null;
+
+        Transform finalTarget = null;
+        float bestDist = float.MaxValue;
+        bool isMelee = false;
+        MeleeUnit meleeForCrowd = null;
+
+        if (closestMelee != null)
+        {
+            bestDist = closestMeleeDist;
+            finalTarget = closestMelee.transform;
+            isMelee = true;
+            meleeForCrowd = closestMelee;
+        }
+
+        if (closestArcher != null && closestArcherDist < bestDist)
+        {
+            bestDist = closestArcherDist;
+            finalTarget = closestArcher.transform;
+            isMelee = false;
+            meleeForCrowd = null;
+        }
+
+        if (closestCommander != null && closestCommanderDist < bestDist)
+        {
+            bestDist = closestCommanderDist;
+            finalTarget = closestCommander.transform;
+            isMelee = false;
+            meleeForCrowd = null;
+        }
+
+        finalIsMelee = isMelee;
+        meleeTarget = meleeForCrowd;
+        return finalTarget;
+    }
+
+    public bool IsTargetCrowded(MeleeUnit requester, MeleeUnit target)
     {
         if (target == null) return false;
 

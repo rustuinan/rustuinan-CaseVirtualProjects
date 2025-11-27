@@ -19,11 +19,34 @@ public class MeleeUnit : MonoBehaviour
     public AudioSource audioSource;
     [Range(0f, 1f)] public float hitVolume = 0.15f;
 
+    [Header("Targeting")]
+    [Tooltip("En yakın hedefi yeniden arama aralığı (saniye)")]
+    public float targetSearchInterval = 0.4f;
+
+    [Header("Separation Optimization")]
+    [Tooltip("Separation vektörünün yeniden hesaplanacağı aralık (saniye)")]
+    public float separationRecalcInterval = 0.12f;
+
+    [Header("Crowd Control")]
+    [Tooltip("Aynı hedefe saldıranların sayısını kontrol etme aralığı (saniye)")]
+    public float crowdCheckInterval = 0.2f;
+
     private float currentHealth;
     private float attackTimer;
     private bool isMoving;
 
     private float surroundBias;
+
+    private Transform currentTarget;
+    private bool currentTargetIsMelee;
+    private MeleeUnit currentMeleeCrowdTarget;
+    private float targetSearchTimer;
+
+    private float separationTimer;
+    private Vector3 cachedSeparation;
+
+    private float crowdCheckTimer;
+    private bool lastCrowdCheckResult;
 
     private Tween moveTween;
     private Tween attackTween;
@@ -48,6 +71,10 @@ public class MeleeUnit : MonoBehaviour
 
         surroundBias = Random.Range(-1f, 1f);
 
+        targetSearchTimer = Random.Range(0f, targetSearchInterval);
+        separationTimer = Random.Range(0f, separationRecalcInterval);
+        crowdCheckTimer = Random.Range(0f, crowdCheckInterval);
+
         BattleManager.Instance.RegisterUnit(this);
     }
 
@@ -64,14 +91,94 @@ public class MeleeUnit : MonoBehaviour
         if (!IsAlive)
             return;
 
-        BattleManager.Instance.UpdateUnit(this);
+        float dt = Time.deltaTime;
+
+        targetSearchTimer -= dt;
+        if (targetSearchTimer <= 0f || currentTarget == null || !IsTargetStillValid(currentTarget))
+        {
+            targetSearchTimer = targetSearchInterval;
+
+            if (BattleManager.Instance != null)
+            {
+                currentTarget = BattleManager.Instance.FindBestTargetFor(
+                    this,
+                    out currentTargetIsMelee,
+                    out currentMeleeCrowdTarget);
+            }
+            else
+            {
+                currentTarget = null;
+            }
+        }
+
+        if (currentTarget == null)
+        {
+            StopMoving();
+            return;
+        }
+
+        separationTimer -= dt;
+        if (separationTimer <= 0f && BattleManager.Instance != null)
+        {
+            cachedSeparation = BattleManager.Instance.GetSeparationDirection(this);
+            separationTimer = separationRecalcInterval;
+        }
+
+        bool crowded = false;
+        crowdCheckTimer -= dt;
+        if (currentTargetIsMelee &&
+            currentMeleeCrowdTarget != null &&
+            BattleManager.Instance != null)
+        {
+            if (crowdCheckTimer <= 0f)
+            {
+                lastCrowdCheckResult =
+                    BattleManager.Instance.IsTargetCrowded(this, currentMeleeCrowdTarget);
+                crowdCheckTimer = crowdCheckInterval;
+            }
+
+            crowded = lastCrowdCheckResult;
+        }
+
+        Vector3 targetPos = currentTarget.position;
+
+        if (IsInAttackRange(targetPos))
+        {
+            Attack(currentTarget);
+        }
+        else
+        {
+            if (!crowded)
+            {
+                MoveTowards(targetPos);
+            }
+            else
+            {
+                StopMoving();
+            }
+        }
 
         if (team == Team.Sphere && modelTransform != null && isMoving)
         {
-            modelTransform.Rotate(Vector3.forward * sphereRollSpeed * Time.deltaTime);
+            modelTransform.Rotate(Vector3.forward * sphereRollSpeed * dt);
         }
     }
 
+    private bool IsTargetStillValid(Transform t)
+    {
+        if (t == null) return false;
+
+        var m = t.GetComponentInParent<MeleeUnit>();
+        if (m != null && m.IsAlive && m.team != team) return true;
+
+        var a = t.GetComponentInParent<ArcherUnit>();
+        if (a != null && a.IsAlive && a.team != team) return true;
+
+        var c = t.GetComponentInParent<CommanderUnit>();
+        if (c != null && c.IsAlive && c.team != team) return true;
+
+        return false;
+    }
 
     private void PlayHitSound()
     {
@@ -80,7 +187,6 @@ public class MeleeUnit : MonoBehaviour
 
         audioSource.PlayOneShot(config.hitSfx, hitVolume);
     }
-
 
     public void MoveTowards(Vector3 targetPos)
     {
@@ -107,14 +213,10 @@ public class MeleeUnit : MonoBehaviour
             dir = orbitDir;
         }
 
-        if (BattleManager.Instance != null)
+        if (cachedSeparation.sqrMagnitude > 0.0001f)
         {
-            Vector3 separation = BattleManager.Instance.GetSeparationDirection(this);
-            if (separation.sqrMagnitude > 0.0001f)
-            {
-                dir += separation;
-                dir.Normalize();
-            }
+            dir += cachedSeparation;
+            dir.Normalize();
         }
 
         transform.position = myPos + dir * config.moveSpeed * Time.deltaTime;
@@ -145,7 +247,6 @@ public class MeleeUnit : MonoBehaviour
         StopMoving();
 
         attackTimer -= Time.deltaTime;
-
         if (attackTimer > 0f)
             return;
 
@@ -230,7 +331,6 @@ public class MeleeUnit : MonoBehaviour
 
         gameObject.SetActive(false);
     }
-
 
     private void StartMoveAnimation()
     {
